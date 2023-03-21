@@ -106,11 +106,11 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  HAL_TIM_Base_Start(&htim2);              //TIM start , store data using pointer
+  HAL_TIM_Base_Start(&htim2);              //TIM2 start , store data using pointer
   HAL_TIM_IC_Start_DMA(&htim2, TIM_CHANNEL_1, InputCaptureBuffer, IC_BUFFER_SIZE);  //DMA start when pointer get vaule
 
-  HAL_TIM_Base_Start(&htim1);
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+  HAL_TIM_Base_Start(&htim1);              //TIM1 start , store data using pointer
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);//PWM start
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -120,33 +120,33 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  //make compare
+
 	 static uint32_t timestamp = 0;
 	 if (HAL_GetTick()>= timestamp)
 	 {
-		 timestamp = HAL_GetTick()+500; // 2 hz
-		 if (MotorControlEnable == 0)
+		 timestamp = HAL_GetTick()+500;    // 2 hz
+		 if (MotorControlEnable == 0)      //CASE 1: Duty cycle Control
 	         {
-			 	 __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, duty);
-			 	 duty = MotorSetDuty *100;
-			 	 MotorReadRPM = 60/(IC_Calc_Period() * 0.000001*768);
+			 	 __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, duty);  //Change Value of pulse using duty
+			 	 duty = MotorSetDuty *100;                            //MotorSetDuty*100 because of 10000 Period
+			 	 MotorReadRPM = 60/(IC_Calc_Period() * 0.000001*768); //To RPM
 			 }
 
-		 else if (MotorControlEnable == 1)
+		 else if (MotorControlEnable == 1) //CASE 1: RPM Control
 		 	 {
 
 
 
-			 	 if (MotorSetRPM > MotorReadRPM * 0.90)
+			 	 if (MotorSetRPM > MotorReadRPM * 0.95)  // 5% threshold
 			 	 {
-			 		duty = duty + 100;
+			 		duty = duty + 100;						//1% increase
 
 			 		MotorReadRPM = 60/(IC_Calc_Period() * 0.000001*768);
 			 		__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, duty);
 			 	 }
-			 	 else if (MotorSetRPM < MotorReadRPM * 1.10)
+			 	 else if (MotorSetRPM < MotorReadRPM * 1.05) // 5% threshold
 			 	 {
-			 		duty = duty - 100;
+			 		duty = duty - 100; 						//1% increase
 
 			 		MotorReadRPM = 60/(IC_Calc_Period() * 0.000001*768);
 			 		__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, duty);
